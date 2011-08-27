@@ -14,12 +14,12 @@ retVals = {
 
 options = {}
 optparse = OptionParser.new do|opts|
-  opts.on('-c threshold', 'Critical threshold') do |c|
-    options[:critical] = Integer(c)
+  opts.on('-c', '--critical threshold', Integer, 'Critical threshold') do |c|
+    options[:critical] = c
   end
 
-  opts.on('-w threshold', 'Warning threshold') do |w|
-    options[:warning] = Integer(w)
+  opts.on('-w', '--warning threshold', Integer, 'Warning threshold') do |w|
+    options[:warning] = w
   end
 
   opts.on('-H', '--host HOST', 'MBean server hostname') do |h|
