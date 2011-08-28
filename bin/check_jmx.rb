@@ -6,10 +6,9 @@ require 'java'
 require 'rubygems'
 require 'jmx4r' # install with: jruby -S gem install jmx4r
 require 'optparse'
-require 'pp'
 
 module NagiosJMX
-  PLUGIN_VERSION = [0, 1].join('.')
+  PLUGIN_VERSION = '0.1-beta'
 
   OK = 0
   WARNING = 1
@@ -51,7 +50,7 @@ module NagiosJMX
         options[:password] = p
       end
       
-      opts.on('-v[vv]', [:v, :vv], "Verbose. [-v]: Single line, additional information. [-vv]: Multi line, configuration debug output. [-vvv]: Lots of detail for plugin problem diagnosis.") do |v|
+      opts.on('-v[vv]', [:v, :vv], "Run verbosely. [-v]: Single line, additional information. [-vv]: Multi line, configuration debug output. [-vvv]: Lots of detail for plugin problem diagnosis.") do |v|
         if v.nil?
           options[:verbosity] = 1
         elsif v == :v
@@ -91,7 +90,7 @@ module NagiosJMX
     options
   end
 
-  def NagiosJMX.check(options = {})
+  def NagiosJMX.perform_check(options = {})
     begin
       con_params = { :host => options[:host], :port => options[:port] }
       if [:username, :password].any? { |key| options.key?(key)  }
@@ -100,16 +99,7 @@ module NagiosJMX
       
       JMX::MBean.establish_connection(con_params)
       mbean = JMX::MBean.find_by_name(options[:mbean])
-      value = mbean.send(options[:attribute])
-      puts value
-  
-      if value >= options[:critical]
-        exit CRITICAL
-      elsif value >= options[:warning]
-        exit WARNING
-      else
-        exit OK
-      end
+      mbean.send(options[:attribute])
   
     rescue NoMethodError
       puts "No such attribute '#{options[:attribute]}' for MBean '#{options[:mbean]}'"
@@ -122,14 +112,29 @@ module NagiosJMX
       exit UNKNOWN
     end
   end
+  
+  def NagiosJMX.check_status(value, warning_threshold, critical_threshold)
+    status = OK
+    status = WARNING if value > warning_threshold
+    status = CRITICAL if value > critical_threshold
+    status
+  end
 
 end
 
 if $0 == __FILE__
   options = NagiosJMX.parse_options
+  value = NagiosJMX.perform_check(options)
+  status = NagiosJMX.check_status(value, options[:warning], options[:critical])
 
-  pp "Options:", options
-  pp "ARGV:", ARGV
+  status_names = {
+    NagiosJMX::OK => 'OK', 
+    NagiosJMX::WARNING => 'WARNING', 
+    NagiosJMX::CRITICAL => 'CRITICAL', 
+    NagiosJMX::UNKNOWN => 'UNKNOWN'
+  }
 
-  NagiosJMX.check(options)
+  puts "#{options[:attribute]} #{status_names[status]} - #{value}"
+  exit status
+  
 end
