@@ -1,4 +1,7 @@
-#!/usr/bin/env jruby
+#!/usr/bin/env jruby --ng
+#
+# Copyright (c) 2011 Matthias Nuessler <m.nuessler@web.de>
+#
 require 'java'
 require 'rubygems'
 require 'jmx4r' # install with: jruby -S gem install jmx4r
@@ -6,13 +9,15 @@ require 'optparse'
 require 'pp'
 
 module NagiosJMX
+  PLUGIN_VERSION = [0, 1].join('.')
+
   OK = 0
   WARNING = 1
   CRITICAL = 2
   UNKNOWN = 3
 
   def NagiosJMX.parse_options
-    options = {}
+    options = {:verbosity => 0}
     optparse = OptionParser.new do|opts|
       opts.on('-c', '--critical threshold', Integer, 'Critical threshold') do |c|
         options[:critical] = c
@@ -22,7 +27,7 @@ module NagiosJMX
         options[:warning] = w
       end
 
-      opts.on('-H', '--host HOST', 'MBean server hostname') do |h|
+      opts.on('-H', '--hostname HOST', 'MBean server hostname') do |h|
         options[:host] = h
       end
 
@@ -42,10 +47,26 @@ module NagiosJMX
         options[:username] = u
       end
 
-      opts.on('-p', '--password PASS', 'Password for authentication on MBean server')  do |p|
+      opts.on('-p', '--password PASS', 'Password for authentication on MBean server') do |p|
         options[:password] = p
       end
-
+      
+      opts.on('-v[vv]', [:v, :vv], "Verbose. [-v]: Single line, additional information. [-vv]: Multi line, configuration debug output. [-vvv]: Lots of detail for plugin problem diagnosis.") do |v|
+        if v.nil?
+          options[:verbosity] = 1
+        elsif v == :v
+          options[:verbosity] = 2
+        elsif v == :vv
+          options[:verbosity] = 3
+        end
+        puts "v: #{options[:verbosity]}"
+      end
+      
+      opts.on('-V', '--version', 'Display version information') do |v|
+        puts "Nagios JMX Plugin #{PLUGIN_VERSION}"
+        exit UNKNOWN
+      end
+      
       opts.on('-h', '--help', 'Display this screen') do
         puts opts
         exit UNKNOWN
