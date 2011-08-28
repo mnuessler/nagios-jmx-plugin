@@ -7,18 +7,6 @@ require 'rubygems'
 require 'jmx4r' # install with: jruby -S gem install jmx4r
 require 'optparse'
 
-class String
-  def to_underscore!
-    self.gsub!(/[a-z][A-Z]+/) do |s|
-      s.insert(1, '_').downcase!
-    end
-    self
-  end
-  def to_underscore
-    self.clone.to_underscore!
-  end
-end
-
 module NagiosJMX
   PLUGIN_VERSION = '0.1-beta'
 
@@ -61,7 +49,7 @@ module NagiosJMX
       opts.on('-p', '--password PASS', 'Password for authentication on MBean server') do |p|
         options[:password] = p
       end
-      
+
       opts.on('-v[vv]', [:v, :vv], "Run verbosely. [-v]: Single line, additional information. [-vv]: Multi line, configuration debug output. [-vvv]: Lots of detail for plugin problem diagnosis.") do |v|
         if v.nil?
           options[:verbosity] = 1
@@ -70,7 +58,6 @@ module NagiosJMX
         elsif v == :vv
           options[:verbosity] = 3
         end
-        puts "v: #{options[:verbosity]}"
       end
       
       opts.on('-V', '--version', 'Display version information') do |v|
@@ -108,19 +95,19 @@ module NagiosJMX
       if [:username, :password].any? { |key| options.key?(key)  }
         con_params.merge(:username => options[:username], :password => options[:password])
       end
-      
+       
       JMX::MBean.establish_connection(con_params)
       mbean = JMX::MBean.find_by_name(options[:mbean])
-      mbean.send(options[:attribute].to_underscore)
+      mbean.send(options[:attribute])
   
     rescue NoMethodError
-      puts "No such attribute '#{options[:attribute]}' for MBean '#{options[:mbean]}'"
-      if options[:verbosity == 3]
+      puts "No such attribute/operation '#{options[:attribute]}' for MBean '#{options[:mbean]}'"
+      if options[:verbosity] == 3
         all_attr = []
         mbean.attributes.each do |a|
           all_attr << a
         end
-        puts "Existing attributes: #{all_attr.join(', ')}"
+        puts "Existing attributes: \n#{all_attr.join("\n")}"
       end
       exit UNKNOWN
     rescue => msg
