@@ -60,12 +60,12 @@ module NagiosJMX
         end
       end
       
-      opts.on('-V', '--version', 'Display version information') do |v|
-        puts "Nagios JMX Plugin #{PLUGIN_VERSION}"
+      opts.on('-V', '--version', 'Show version information') do |v|
+        puts "Nagios JMX Plugin #{PLUGIN_VERSION} (https://github.com/mnuessler/nagios-jmx-plugin/)"
         exit UNKNOWN
       end
       
-      opts.on('-h', '--help', 'Display this screen') do
+      opts.on('-h', '--help', 'Show this message') do
         puts opts
         exit UNKNOWN
       end
@@ -121,6 +121,15 @@ module NagiosJMX
     status = WARNING if value > warning_threshold
     status = CRITICAL if value > critical_threshold
     status
+  end
+  
+  def NagiosJMS.get_range(threshold)
+    range = 0..threshold if is_numeric?(threshold)
+    range = 
+  end
+  
+  def is_numeric?(i)
+    true if Float(i) rescue false
   end
 
 end
