@@ -1,0 +1,3 @@
+[submodule "lib/jmx4r"]
+	path = lib/jmx4r
+	url = git@github.com:mnuessler/jmx4r.git
